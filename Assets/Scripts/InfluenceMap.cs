@@ -17,19 +17,20 @@ public class InfluenceMap : MonoBehaviour
     private float[] influenceMap;
     private float timer;
 
-    private float[,] testArr;
-
-
+    // [Object, värdet] -> Influence map [position, värde]
+    private float[,] map2;
+    private Dictionary<Vector3, float> map = new Dictionary<Vector3, float>();
 
     // Start is called before the first frame update
     void Start()
     {
         timer = 0;
         influenceMap = new float[(int)Mathf.Pow(20, 2)];
+        initDictionary();
 
-        testArr = new float[20, 20];
-
-        print(influenceMap.Length);
+        //print(influenceMap.Length);
+        //print(map);
+        //printDict();
 
         // Fill array with default values
         for (int i = 0; i < influenceMap.Length; i++)
@@ -53,14 +54,17 @@ public class InfluenceMap : MonoBehaviour
             foreach (Collider obj in nearbyObjects)
             {
                 Vector3 pos = grid.WorldToCell(obj.gameObject.transform.position);
-                print(pos);
-                testArr[(int)pos.x, (int)pos.z] = 5.0f;
+                //print("position: " + pos);
+                //Node temp = new Node(pos);
+                //print("temp: " + temp.getPosition());
+                if(map.ContainsKey(pos))
+                {
+                    print("contains");
+                    map[pos] = 5.0f;
+                    //printDict();
+                }
             }
-
-            print(testArr);
-
         }
-
     }
 
 
@@ -82,5 +86,38 @@ public class InfluenceMap : MonoBehaviour
         // Draw a yellow sphere at the transform's position
         Gizmos.color = Color.yellow;
         Gizmos.DrawSphere(transform.position, 5);
+    }
+
+    void initDictionary()
+    {
+        for (int i = -10; i < 10; i++){
+            for (int j = -10; j < 10; j++){
+                map.Add(new Vector3((float)i, 0.0f, (float)j), 0.5f);
+            }
+        }
+    }
+
+    void printDict()
+    {
+        foreach(KeyValuePair<Vector3, float> entry in map)
+        {
+            print("entry "+ entry.Key);
+        }
+    }
+}
+
+
+public class Node
+{
+    Vector3 position;
+
+    public Node(Vector3 pos)
+    {
+        this.position = pos;
+    }
+
+    public Vector3 getPosition()
+    {
+        return this.position;
     }
 }
