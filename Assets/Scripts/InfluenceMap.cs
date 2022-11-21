@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO.IsolatedStorage;
@@ -14,7 +15,8 @@ public class InfluenceMap : MonoBehaviour
     [SerializeField]
     MeshFilter planeMesh;
 
-    private float[] influenceMap;
+    //private float[] influenceMap;
+    Texture2D influenceMap;
     private float timer;
 
     // [Object, värdet] -> Influence map [position, värde]
@@ -25,7 +27,7 @@ public class InfluenceMap : MonoBehaviour
     void Start()
     {
         timer = 0;
-        influenceMap = new float[(int)Mathf.Pow(20, 2)];
+        //influenceMap = new float[(int)Mathf.Pow(20, 2)];
         initDictionary();
 
         //print(influenceMap.Length);
@@ -33,9 +35,14 @@ public class InfluenceMap : MonoBehaviour
         //printDict();
 
         // Fill array with default values
-        for (int i = 0; i < influenceMap.Length; i++)
+        influenceMap = new Texture2D(20, 20);
+        for (int y = 0; y < 20; y++)
         {
-            influenceMap[i] = 0.5f;
+            for (int x = 0; x < 20; x++)
+            {
+                influenceMap.SetPixel(y, x, new Color(0.5f, 0.5f, 0.5f));
+            }
+            
         }
     }
 
@@ -46,7 +53,7 @@ public class InfluenceMap : MonoBehaviour
 
         timer += Time.deltaTime;
 
-        if (timer > 0.5f)
+        if (timer > 0.1f)
         {
             timer = 0;
             Collider[] nearbyObjects = getNearbyObjects();
@@ -54,16 +61,27 @@ public class InfluenceMap : MonoBehaviour
             foreach (Collider obj in nearbyObjects)
             {
                 Vector3 pos = grid.WorldToCell(obj.gameObject.transform.position);
-                //print("position: " + pos);
-                //Node temp = new Node(pos);
-                //print("temp: " + temp.getPosition());
+
+                print((pos.x + 10) + ", " + (pos.y + 10));
+                print(influenceMap.width);
+
+                influenceMap.SetPixel((int)pos.x + 10, (int)pos.z + 10, new Color(1.0f, 1.0f, 1.0f));
+                
+                /*
                 if(map.ContainsKey(pos))
                 {
                     print("contains");
                     map[pos] = 5.0f;
                     //printDict();
                 }
+                */
             }
+
+            influenceMap.Apply();
+            Sprite IMsprite = Sprite.Create(influenceMap, new Rect(0, 0, influenceMap.width, influenceMap.width), new Vector2(0.5f, 0.5f));
+            influenceMapImage.overrideSprite = IMsprite;
+        
+
         }
     }
 
@@ -72,11 +90,6 @@ public class InfluenceMap : MonoBehaviour
     {
         Vector3 position = transform.position;
         Collider[] nearbyObjects = Physics.OverlapSphere(position, 5.0f, LayerMask.GetMask("GameObject"));
-
-        if (nearbyObjects.Length != 0)
-        {
-            print(nearbyObjects);
-        }
 
         return nearbyObjects;
     }
