@@ -19,20 +19,21 @@ public class InfluenceMap : MonoBehaviour
     Image influenceMapImage;
     [SerializeField]
     MeshFilter planeMesh;
+    [SerializeField]
+    Shader lowpassShader;
+
+    [SerializeField]
+    Material lowPass;
+    [SerializeField]
+    private int filterIterations;
 
     Texture2D influenceMap;
     Texture m_texture;
 
     private float timer;
-    private int filterIterations = 1;
-    private int[] xFilter = {1, 2, 1};
-    private int[] yFilter = {1, 2, 1};
-
+    
     private float[,] map2;
     private Dictionary<Vector3, float> map = new Dictionary<Vector3, float>();
-
-    // Filter kernel
-    float filterOffset;
 
 
     // Start is called before the first frame update
@@ -41,13 +42,12 @@ public class InfluenceMap : MonoBehaviour
         timer = 0;        
         initDictionary();
 
-        
-
+        lowPass.hideFlags = HideFlags.HideAndDontSave;
         
 
         // Fill array with default values
         influenceMap = new Texture2D(20, 20);
-        influenceMapImage.material.SetTexture("_ImTex", influenceMap);
+        lowPass.SetTexture("_MainTex", influenceMap);
 
 
         for (int y = 0; y < 20; y++)
@@ -60,14 +60,11 @@ public class InfluenceMap : MonoBehaviour
 
         influenceMap.Apply();
         influenceMap.filterMode = FilterMode.Point;
+        influenceMap.wrapMode = TextureWrapMode.Clamp;
         influenceMapImage.DisableSpriteOptimizations();
-
-        goToPos = transform.position;
-
         
 
-        //filterOffset = 1 / (influenceMap.width * influenceMap.height);
-
+        goToPos = transform.position;
     }
 
     // Update is called once per frame
@@ -75,104 +72,55 @@ public class InfluenceMap : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        Graphics.Blit(influenceMap as Texture, influenceMapImage.material, pass: 0);
-        Graphics.Blit(influenceMap as Texture, influenceMapImage.material, pass: 1);
+        influenceMap.SetPixel((int)transform.position.x + 10, (int)transform.position.z + 10, new Color(0.0f, 0.0f, 0.0f));
+        
+        Collider[] nearbyObjects = getNearbyObjects();
 
-        //influenceMap = (Texture2D)influenceMapImage.material.GetTexture("_ImTex");
-
-        if (timer > 0.2f)
+        foreach (Collider obj in nearbyObjects)
         {
-            influenceMap.SetPixel((int)transform.position.x + 10, (int)transform.position.z + 10, new Color(0.0f, 0.0f, 0.0f));
-            timer = 0;
-            Collider[] nearbyObjects = getNearbyObjects();
+            Vector3 pos = obj.gameObject.transform.position;
+            Vector2 newPixel = new Vector2(pos.x + 10, pos.z + 10);
 
-            foreach (Collider obj in nearbyObjects)
-            {
-                Vector3 pos = grid.WorldToCell(obj.gameObject.transform.position);
-
-                //print((pos.x + 10) + ", " + (pos.y + 10));
-                //print(influenceMap.width);
-                
-                Vector2 newPixel = new Vector2(pos.x + 10, pos.z + 10);
-
-                influenceMap.SetPixel((int)newPixel.x, (int)newPixel.y, new Color(1.0f, 1.0f, 1.0f));
-            }
-            influenceMap.Apply();
-
-            //updateMap();
-            findPoint();
-            //Sprite IMsprite = Sprite.Create(influenceMap, new Rect(0, 0, influenceMap.width, influenceMap.width), new Vector2(0.5f, 0.5f));
-            //influenceMapImage.overrideSprite = IMsprite;
-
-            print(influenceMap.GetPixel(5, 5));
-
+            influenceMap.SetPixel((int)newPixel.x, (int)newPixel.y, new Color(1.0f, 1.0f, 1.0f));
         }
+        influenceMap.Apply();
+
+        
+        
+        if (timer >= 0.5)
+        {
+            timer = 0;
+            decay();
+        }
+
+        lowPassFilter();
+
+        findPoint();
     }
 
-    private void updateMap()
+    private void decay()
     {
+        RenderTexture currentDestination = RenderTexture.GetTemporary(20, 20, 0);
+        Graphics.Blit(influenceMap, currentDestination, lowPass, 2);
+        influenceMap.ReadPixels(new Rect(0, 0, currentDestination.width, currentDestination.height), 0, 0);
+        influenceMap.Apply();
+    }
+
+    private void lowPassFilter()
+    {
+        RenderTexture currentDestination = RenderTexture.GetTemporary(20, 20, 0);
+
         for (int i = 0; i < filterIterations; i++)
         {
-            influenceMap = lowPassFilterX(influenceMap);
-            influenceMap = lowPassFilterY(influenceMap);
+            Graphics.Blit(influenceMap, currentDestination, lowPass, 0);
+            influenceMap.ReadPixels(new Rect(0, 0, currentDestination.width, currentDestination.height), 0, 0);
+            influenceMap.Apply();
+            Graphics.Blit(influenceMap, currentDestination, lowPass, 1);
+            influenceMap.ReadPixels(new Rect(0, 0, currentDestination.width, currentDestination.height), 0, 0);
+            influenceMap.Apply();
         }
     }
-
-    private Texture2D lowPassFilterX(Texture2D tex)
-    {
-        for (int y = 0; y < influenceMap.height; y++)
-        {
-            for (int x = 0; x < influenceMap.width; x++)
-            {
-                Color right = new Color(0,0,0);
-                Color left = new Color(0,0,0);
-
-                for (int i = 0; i < xFilter.Length/2; i++)
-                {
-                    right += influenceMap.GetPixel(x + (i+1), y) * xFilter[(xFilter.Length/2) + (i+1)];
-                    left += influenceMap.GetPixel(x - (i+1), y) * xFilter[(xFilter.Length/2) - (i+1)];
-                }
-
-                Color center = influenceMap.GetPixel(x, y) * xFilter[xFilter.Length/2];
-
-                Color newColor = (right + left + center) / (xFilter.Sum());
-
-                tex.SetPixel(x, y, newColor);
-            }
-        }
-
-        tex.Apply();
-        return tex;
-    }
-    private Texture2D lowPassFilterY(Texture2D tex)
-    {
-        for (int y = 0; y < influenceMap.height; y++)
-        {
-            for (int x = 0; x < influenceMap.width; x++)
-            {
-
-                Color up = new Color(0,0,0);
-                Color down = new Color(0,0,0);
-
-                for (int i = 0; i < yFilter.Length / 2; i++)
-                {
-                    print(yFilter.Length / 2);
-                    up += influenceMap.GetPixel(x, y + (i+1)) * yFilter[(yFilter.Length/2) + (i+1)];
-                    down += influenceMap.GetPixel(x, y - (i+1)) * yFilter[(yFilter.Length/2) - (i+1)];
-                }
-
-                Color center = influenceMap.GetPixel(x, y) * yFilter[yFilter.Length / 2];
-
-                Color newColor = (up + down + center) / (yFilter.Sum());
-
-                tex.SetPixel(x, y, newColor);
-            }
-        }
-
-        tex.Apply();
-        return tex;
-
-    }
+   
     private void findPoint()
     {
         float highestValue = 0.0f;
@@ -196,7 +144,7 @@ public class InfluenceMap : MonoBehaviour
     private Collider[] getNearbyObjects()
     {
         Vector3 position = transform.position;
-        Collider[] nearbyObjects = Physics.OverlapSphere(position, 5.0f, LayerMask.GetMask("GameObject"));
+        Collider[] nearbyObjects = Physics.OverlapSphere(position, 20.0f, LayerMask.GetMask("GameObject"));
 
         return nearbyObjects;
     }
