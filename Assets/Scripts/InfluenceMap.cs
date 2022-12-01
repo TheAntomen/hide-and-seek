@@ -27,7 +27,7 @@ public class InfluenceMap : MonoBehaviour
     [SerializeField]
     private int filterIterations;
 
-    Texture2D influenceMap;
+    public Texture2D influenceMap;
     Texture m_texture;
 
     private float timer;

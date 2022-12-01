@@ -14,78 +14,9 @@ public class AgentController : MonoBehaviour
     private float movementSpeed;
 
     Vector3 goal;
-
-    void Start()
-    {
-        goal = InfluenceMap.goToPos;
-        InvokeRepeating("UpdatePath", 0f, 0.5f);
-    }
-
-    void UpdatePath()
-    {
-        if (goal != null)
-        {
-            if (seeker.IsDone()) seeker.StartPath(rb.position, goal, OnPathComplete);
-        }
-    }
-
-    void OnPathComplete(Path p)
-    {
-        if (!p.error)
-        {
-            path = p;
-            currentWaypoint = 0;
-        }
-    }
-
-    // Update is called once per frame
-    void FixedUpdate()
-    {
-        if (path == null) return;
-
-        if (currentWaypoint >= path.vectorPath.Count)
-        {
-            reachedEndOfPath = true;
-            return;
-        }
-        else
-        {
-            reachedEndOfPath = false;
-        }
-
-        Vector2 direction = ((Vector2)path.vectorPath[currentWaypoint] - rb.position).normalized;
-        float distance = Vector2.Distance(rb.position, path.vectorPath[currentWaypoint]);
-        float distanceToTarget = Vector2.Distance(rb.position, goal.transform.position);
-        float speed = unit.speed;
-
-        FlipTransform(direction);
-
-        // If the unit is supposed to flee from player and "kite", negate direction and slow speed
-        if (unit.kitingSpeed > 0 && distanceToTarget < unit.range / 2)
-        {
-            direction = -direction;
-            speed = unit.kitingSpeed;
-        }
-
-        Vector2 force = direction * speed * Time.deltaTime;
-        rb.AddForce(force);
-
-        // If the player is within range of the enemy, it will attack
-        if (distanceToTarget < unit.range) unit.Attack(goal);
-
-
-        if (distance < nextWaypointDistance) currentWaypoint++;
-
-        animator.SetFloat("Speed", Mathf.Abs(rb.velocity.x));
-    }
-
-
-
-
-    //private Vector3 moveStep = Vector3.zero;
-
-    // Start is called before the first frame update
-    /*
+    Vector3 start;
+    
+    Vector3 move;
     void Start()
     {
         
@@ -94,6 +25,8 @@ public class AgentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        /*
+        
         Vector3 dest = InfluenceMap.goToPos;
         //print("dest: " + dest);
         //print("pos: " + transform.position);
@@ -103,6 +36,57 @@ public class AgentController : MonoBehaviour
             dir.Normalize();
             controller.Move(dir * movementSpeed * Time.deltaTime);
         }
+
+        */
+        goal = InfluenceMap.goToPos;
+        goal = new Vector3(goal.x, 0, goal.z);
+        start = new Vector3(transform.position.x, 0, transform.position.z);
+        Vector3 dir = movementCalc();
+        dir.Normalize();
+        controller.Move(dir * movementSpeed * Time.deltaTime);
     }
-    */
+
+    Vector3 movementCalc() 
+    {
+        Color goal_color = InfluenceMap.influenceMap.GetPixel((int)goal.x, (int)goal.z);
+        Vector3 goal_vector = (goal - start) * goal_color.r;
+        
+
+        foreach (Vector3 neighbour in getNeighbours(start))
+        {
+            Color neighbour_color = InfluenceMap.influenceMap.GetPixel((int)neighbour.x, (int)neighbour.z);
+            Vector3 neighbours_to_agent_vector = (start - neighbour) * neighbour_color.r;
+            
+            move += neighbours_to_agent_vector;
+        }
+
+        move += goal_vector;
+        print("move after " + move);
+        return move;
+    }
+
+    List<Vector3> getNeighbours(Vector3 pos)
+    {
+        List<Vector3> neighbours = new List<Vector3>();
+
+        //top
+        neighbours.Add(new Vector3(pos.x, 0, pos.z + 1));
+        //bot
+        neighbours.Add(new Vector3(pos.x, 0, pos.z - 1));
+        //right
+        neighbours.Add(new Vector3(pos.x + 1, 0, pos.z));
+        //left
+        neighbours.Add(new Vector3(pos.x - 1, 0, pos.z + 1));
+        //northeast
+        neighbours.Add(new Vector3(pos.x + 1, 0, pos.z + 1));
+        //northwest
+        neighbours.Add(new Vector3(pos.x - 1, 0, pos.z + 1));
+        //southeast
+        neighbours.Add(new Vector3(pos.x + 1, 0, pos.z - 1));
+        //southwest
+        neighbours.Add(new Vector3(pos.x - 1, 0, pos.z - 1));
+        
+        return neighbours;
+    }
+
 }
