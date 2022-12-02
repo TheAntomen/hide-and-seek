@@ -25,7 +25,7 @@ public class AgentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        /*
+        
         
         Vector3 dest = InfluenceMap.goToPos;
         //print("dest: " + dest);
@@ -37,30 +37,35 @@ public class AgentController : MonoBehaviour
             controller.Move(dir * movementSpeed * Time.deltaTime);
         }
 
-        */
+        /*
         goal = InfluenceMap.goToPos;
         goal = new Vector3(goal.x, 0, goal.z);
         start = new Vector3(transform.position.x, 0, transform.position.z);
         Vector3 dir = movementCalc();
         dir.Normalize();
         controller.Move(dir * movementSpeed * Time.deltaTime);
+        */
     }
 
     Vector3 movementCalc() 
     {
-        Color goal_color = InfluenceMap.influenceMap.GetPixel((int)goal.x, (int)goal.z);
+        Color goal_color = InfluenceMap.influenceMap.GetPixel((int)goal.x + 10, (int)goal.z + 10);
         Vector3 goal_vector = (goal - start) * goal_color.r;
-        
 
+        move = new Vector3(0f, 0f, 0f);
         foreach (Vector3 neighbour in getNeighbours(start))
         {
-            Color neighbour_color = InfluenceMap.influenceMap.GetPixel((int)neighbour.x, (int)neighbour.z);
-            Vector3 neighbours_to_agent_vector = (start - neighbour) * neighbour_color.r;
+            Color neighbour_color = InfluenceMap.influenceMap.GetPixel((int)neighbour.x + 10, (int)neighbour.z + 10);
+            Vector3 neighbours_to_agent_vector = (start - neighbour) * (1-neighbour_color.r);
             
             move += neighbours_to_agent_vector;
         }
 
-        move += goal_vector;
+        if (goal_color.r > 0.5)
+        {
+            move += goal_vector;
+        }
+
         print("move after " + move);
         return move;
     }
@@ -76,7 +81,7 @@ public class AgentController : MonoBehaviour
         //right
         neighbours.Add(new Vector3(pos.x + 1, 0, pos.z));
         //left
-        neighbours.Add(new Vector3(pos.x - 1, 0, pos.z + 1));
+        neighbours.Add(new Vector3(pos.x - 1, 0, pos.z));
         //northeast
         neighbours.Add(new Vector3(pos.x + 1, 0, pos.z + 1));
         //northwest

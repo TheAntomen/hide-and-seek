@@ -124,6 +124,7 @@ public class InfluenceMap : MonoBehaviour
     private void findPoint()
     {
         float highestValue = 0.0f;
+        
 
         for (int y = 0; y < influenceMap.height; y++)
         {
@@ -144,7 +145,7 @@ public class InfluenceMap : MonoBehaviour
     private Collider[] getNearbyObjects()
     {
         Vector3 position = transform.position;
-        Collider[] nearbyObjects = Physics.OverlapSphere(position, 20.0f, LayerMask.GetMask("GameObject"));
+        Collider[] nearbyObjects = Physics.OverlapSphere(position, 5.0f, LayerMask.GetMask("GameObject"));
 
         return nearbyObjects;
     }
