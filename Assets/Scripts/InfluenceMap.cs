@@ -46,13 +46,13 @@ public class InfluenceMap : MonoBehaviour
         
 
         // Fill array with default values
-        influenceMap = new Texture2D(20, 20);
+        influenceMap = new Texture2D(40, 40);
         lowPass.SetTexture("_MainTex", influenceMap);
 
 
-        for (int y = 0; y < 20; y++)
+        for (int y = 0; y < 40; y++)
         {
-            for (int x = 0; x < 20; x++)
+            for (int x = 0; x < 40; x++)
             {
                 influenceMap.SetPixel(y, x, new Color(0.5f, 0.5f, 0.5f));
             }
@@ -72,21 +72,19 @@ public class InfluenceMap : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        influenceMap.SetPixel((int)transform.position.x + 10, (int)transform.position.z + 10, new Color(0.0f, 0.0f, 0.0f));
+        influenceMap.SetPixel((int)transform.position.x + 20, (int)transform.position.z + 20, new Color(0.0f, 0.0f, 0.0f));
         
         Collider[] nearbyObjects = getNearbyObjects();
 
         foreach (Collider obj in nearbyObjects)
         {
             Vector3 pos = obj.gameObject.transform.position;
-            Vector2 newPixel = new Vector2(pos.x + 10, pos.z + 10);
+            Vector2 newPixel = new Vector2(pos.x, pos.z);
 
-            influenceMap.SetPixel((int)newPixel.x, (int)newPixel.y, new Color(1.0f, 1.0f, 1.0f));
+            //AddPoint(newPixel, 1.0f);
         }
-        influenceMap.Apply();
 
-        
-        
+       
         if (timer >= 0.5)
         {
             timer = 0;
@@ -98,9 +96,16 @@ public class InfluenceMap : MonoBehaviour
         findPoint();
     }
 
+
+    public void AddPoint(Vector2 coord, float weight)
+    {
+        influenceMap.SetPixel((int)coord.x + 20, (int)coord.y + 20, new Color(weight, weight, weight));
+        influenceMap.Apply();
+    }
+
     private void decay()
     {
-        RenderTexture currentDestination = RenderTexture.GetTemporary(20, 20, 0);
+        RenderTexture currentDestination = RenderTexture.GetTemporary(40, 40, 0);
         Graphics.Blit(influenceMap, currentDestination, lowPass, 2);
         influenceMap.ReadPixels(new Rect(0, 0, currentDestination.width, currentDestination.height), 0, 0);
         influenceMap.Apply();
@@ -108,7 +113,7 @@ public class InfluenceMap : MonoBehaviour
 
     private void lowPassFilter()
     {
-        RenderTexture currentDestination = RenderTexture.GetTemporary(20, 20, 0);
+        RenderTexture currentDestination = RenderTexture.GetTemporary(40, 40, 0);
 
         for (int i = 0; i < filterIterations; i++)
         {
@@ -125,7 +130,6 @@ public class InfluenceMap : MonoBehaviour
     {
         float highestValue = 0.0f;
         
-
         for (int y = 0; y < influenceMap.height; y++)
         {
             for (int x = 0; x < influenceMap.width; x++)
@@ -135,7 +139,7 @@ public class InfluenceMap : MonoBehaviour
                 if (pixel.r > highestValue)
                 {
                     highestValue = pixel.r;
-                    goToPos = new Vector3(x - 10f, 0.0f, y - 10f);
+                    goToPos = new Vector3(x - 20f, 0.0f, y - 20f);
                 }
             }
         }

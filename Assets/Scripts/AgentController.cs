@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,8 @@ public class AgentController : MonoBehaviour
     CharacterController controller;
     [SerializeField]
     private InfluenceMap InfluenceMap;
+    [SerializeField]
+    private FieldOfView fieldOfView;
 
     [SerializeField]
     private float movementSpeed;
@@ -25,8 +28,6 @@ public class AgentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-        
         Vector3 dest = InfluenceMap.goToPos;
         //print("dest: " + dest);
         //print("pos: " + transform.position);
@@ -34,7 +35,17 @@ public class AgentController : MonoBehaviour
         {
             Vector3 dir = dest - new Vector3(transform.position.x, 0.0f, transform.position.z);
             dir.Normalize();
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 40f);
             controller.Move(dir * movementSpeed * Time.deltaTime);
+
+            Debug.Log(dest);
+        }
+
+        fieldOfView.FindVisibleTargets();
+
+        foreach (Transform target in fieldOfView.visibleTargets)
+        {
+            InfluenceMap.AddPoint(target.position, 1.0f);
         }
 
         /*
