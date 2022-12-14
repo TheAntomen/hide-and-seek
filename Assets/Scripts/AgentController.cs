@@ -45,8 +45,17 @@ public class AgentController : MonoBehaviour
 
         foreach (Transform target in fieldOfView.visibleTargets)
         {
-            InfluenceMap.AddPoint(target.position, 1.0f);
+
+            if(target.gameObject.tag == "Cube") 
+            {
+                InfluenceMap.AddPoint(new Vector2(target.position.x, target.position.z), 0.0f);
+            }
+            if(target.gameObject.tag == "Player")
+            {
+                InfluenceMap.AddPoint(new Vector2(target.position.x, target.position.z), 1.0f);
+            }
         }
+        
 
         /*
         goal = InfluenceMap.goToPos;

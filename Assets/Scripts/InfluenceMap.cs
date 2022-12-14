@@ -74,15 +74,15 @@ public class InfluenceMap : MonoBehaviour
 
         influenceMap.SetPixel((int)transform.position.x + 20, (int)transform.position.z + 20, new Color(0.0f, 0.0f, 0.0f));
         
-        Collider[] nearbyObjects = getNearbyObjects();
-
+        //Collider[] nearbyObjects = getNearbyObjects();
+        /*
         foreach (Collider obj in nearbyObjects)
         {
             Vector3 pos = obj.gameObject.transform.position;
             Vector2 newPixel = new Vector2(pos.x, pos.z);
 
             //AddPoint(newPixel, 1.0f);
-        }
+        }*/
 
        
         if (timer >= 0.5)
