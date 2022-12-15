@@ -100,6 +100,7 @@ public class InfluenceMap : MonoBehaviour
     public void AddPoint(Vector2 coord, float weight)
     {
         influenceMap.SetPixel((int)coord.x + 20, (int)coord.y + 20, new Color(weight, weight, weight));
+        Debug.Log(coord);
         influenceMap.Apply();
     }
 

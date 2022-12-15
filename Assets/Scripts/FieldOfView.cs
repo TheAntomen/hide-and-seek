@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,7 +15,9 @@ public class FieldOfView : MonoBehaviour
     private LayerMask obstacleMask;
 
     public List<Transform> visibleTargets = new List<Transform> ();
-    public List<Transform> visibleObstacles = new List<Transform> ();
+    public List<Vector3> visibleObstacles = new List<Vector3> ();
+
+    private const int RAY_DIST = 100;
 
     public void FindVisibleTargets()
     {
@@ -41,27 +44,36 @@ public class FieldOfView : MonoBehaviour
 
         Collider[] targetsInViewRadius2 = Physics.OverlapSphere(transform.position, viewRadius, obstacleMask);
 
+        //float viewArea = (float)(viewRadius * viewRadius * Math.PI);
+
         for (int i = 0; i < targetsInViewRadius2.Length; i++)
         {
+
             Transform target = targetsInViewRadius2[i].transform;
             Vector3 dirToTarget= (target.position - transform.position).normalized;
-            
-            // Kontrollera att transform.forward �r faktiskt r�tt
+
+            // Kontrollera att transform.forward är faktiskt rött
             if (Vector3.Angle(transform.forward, dirToTarget) < viewAngle / 2)
             {
                 float distToTarget = Vector3.Distance(transform.position, target.position);
-                RaycastHit hit;
-                // Does the ray intersect any objects excluding the player layer
-                if (!Physics.Raycast(transform.position, dirToTarget, out hit, distToTarget, targetMask))
+
+                for (int k = 0; i < 24; i++)
                 {
-                    Debug.DrawRay(transform.position, dirToTarget * hit.distance, Color.yellow);
-                    Debug.Log("hit point" + hit.point);
-                    Debug.Log("Did Hit");
+                    RaycastHit hit;
+                    // Does the ray intersect any objects excluding the player layer
+                    if (Physics.Raycast(transform.position, transform.forward, out hit, RAY_DIST, obstacleMask))
+                    {
+                        Debug.DrawRay(transform.position, dirToTarget * RAY_DIST, Color.yellow);
+                        visibleObstacles.Add(hit.point);
+                    }
                 }
+             
+                /*
                 if (!Physics.Raycast(transform.position, dirToTarget, distToTarget, targetMask))
                 {
                     visibleTargets.Add(target);
                 }
+                */
             }
         }
     }

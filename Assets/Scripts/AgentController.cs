@@ -38,24 +38,22 @@ public class AgentController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 40f);
             controller.Move(dir * movementSpeed * Time.deltaTime);
 
-            Debug.Log(dest);
+            //Debug.Log(dest);
         }
 
         fieldOfView.FindVisibleTargets();
 
         foreach (Transform target in fieldOfView.visibleTargets)
         {
-
-            if(target.gameObject.tag == "Cube") 
-            {
-                InfluenceMap.AddPoint(new Vector2(target.position.x, target.position.z), 0.0f);
-            }
-            if(target.gameObject.tag == "Player")
-            {
-                InfluenceMap.AddPoint(new Vector2(target.position.x, target.position.z), 1.0f);
-            }
+            InfluenceMap.AddPoint(new Vector2(target.position.x, target.position.z), 1.0f);
         }
-        
+
+        foreach (Vector3 obstacle in fieldOfView.visibleObstacles)
+        {
+            Debug.Log("Hej?");
+            InfluenceMap.AddPoint(new Vector2(obstacle.x, obstacle.z), 0.0f);
+        }
+
 
         /*
         goal = InfluenceMap.goToPos;
