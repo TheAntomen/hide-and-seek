@@ -18,64 +18,59 @@ public class FieldOfView : MonoBehaviour
     public List<Vector3> visibleObstacles = new List<Vector3> ();
 
     private const int RAY_DIST = 100;
+    private int rayCount = 50;
+    private float angle = 0f;
+    private float angleIncrease;
+    private float startingAngle;
 
+
+    private void Start()
+    {
+        angle = startingAngle;
+        angleIncrease = viewAngle / rayCount;
+    }
     public void FindVisibleTargets()
     {
         visibleTargets.Clear();
         visibleObstacles.Clear();
-        Collider[] targetsInViewRadius = Physics.OverlapSphere(transform.position, viewRadius, targetMask);
 
-        for (int i = 0; i < targetsInViewRadius.Length; i++)
+        angle = GetAngleFromVector(transform.forward) - viewAngle / 2f;
+
+        for (int i = 0; i <= rayCount; i++)
         {
-            Transform target = targetsInViewRadius[i].transform;
-            Vector3 dirToTarget= (target.position - transform.position).normalized;
-            
-            // Kontrollera att transform.forward �r faktiskt r�tt
-            if (Vector3.Angle(transform.forward, dirToTarget) < viewAngle / 2)
+            RaycastHit hit;
+            Physics.Raycast(transform.position, GetVectorFromAngle(angle +(i*angleIncrease)), out hit, viewRadius, targetMask);
+            Debug.DrawRay(transform.position, GetVectorFromAngle(angle + (i * angleIncrease)) * Vector3.Distance(transform.position, hit.point), Color.yellow);
+
+            if (hit.collider == null)
             {
-                float distToTarget = Vector3.Distance(transform.position, target.position);
-                
-                if (!Physics.Raycast(transform.position, dirToTarget, distToTarget, obstacleMask))
-                {
-                    visibleTargets.Add(target);
-                }
+                // Nothing hit
+            }
+            else if (hit.collider.gameObject.tag == "Cube")
+            {
+                visibleObstacles.Add(hit.point);
+            }
+            else if (hit.collider.gameObject.tag == "Player")
+            {
+                visibleTargets.Add(hit.transform);
             }
         }
+    }
 
-        Collider[] targetsInViewRadius2 = Physics.OverlapSphere(transform.position, viewRadius, obstacleMask);
+    public static float GetAngleFromVector(Vector3 dir)
+    {
+        dir = dir.normalized;
+        float n = Mathf.Atan2(dir.z, dir.x) * Mathf.Rad2Deg;
+        if (n < 0) n += 360;
 
-        //float viewArea = (float)(viewRadius * viewRadius * Math.PI);
+        return n;
+    }
 
-        for (int i = 0; i < targetsInViewRadius2.Length; i++)
-        {
+    public static Vector3 GetVectorFromAngle(float angle)
+    {
+        float angleRad = angle * (Mathf.PI / 180f);
 
-            Transform target = targetsInViewRadius2[i].transform;
-            Vector3 dirToTarget= (target.position - transform.position).normalized;
-
-            // Kontrollera att transform.forward är faktiskt rött
-            if (Vector3.Angle(transform.forward, dirToTarget) < viewAngle / 2)
-            {
-                float distToTarget = Vector3.Distance(transform.position, target.position);
-
-                for (int k = 0; i < 24; i++)
-                {
-                    RaycastHit hit;
-                    // Does the ray intersect any objects excluding the player layer
-                    if (Physics.Raycast(transform.position, transform.forward, out hit, RAY_DIST, obstacleMask))
-                    {
-                        Debug.DrawRay(transform.position, dirToTarget * RAY_DIST, Color.yellow);
-                        visibleObstacles.Add(hit.point);
-                    }
-                }
-             
-                /*
-                if (!Physics.Raycast(transform.position, dirToTarget, distToTarget, targetMask))
-                {
-                    visibleTargets.Add(target);
-                }
-                */
-            }
-        }
+        return new Vector3(Mathf.Cos(angleRad), 0, Mathf.Sin(angleRad));
     }
 
 }

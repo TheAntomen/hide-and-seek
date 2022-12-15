@@ -7,6 +7,7 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.U2D;
 using UnityEngine.UI;
 
 public class InfluenceMap : MonoBehaviour
@@ -21,6 +22,8 @@ public class InfluenceMap : MonoBehaviour
     MeshFilter planeMesh;
     [SerializeField]
     Shader lowpassShader;
+    [SerializeField]
+    LayerMask layerMask;
 
     [SerializeField]
     Material lowPass;
@@ -49,7 +52,6 @@ public class InfluenceMap : MonoBehaviour
         influenceMap = new Texture2D(40, 40);
         lowPass.SetTexture("_MainTex", influenceMap);
 
-
         for (int y = 0; y < 40; y++)
         {
             for (int x = 0; x < 40; x++)
@@ -65,6 +67,7 @@ public class InfluenceMap : MonoBehaviour
         
 
         goToPos = transform.position;
+        goToPos.y = 0;
     }
 
     // Update is called once per frame
@@ -72,7 +75,8 @@ public class InfluenceMap : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        influenceMap.SetPixel((int)transform.position.x + 20, (int)transform.position.z + 20, new Color(0.0f, 0.0f, 0.0f));
+        //influenceMap.SetPixel((int)transform.position.x + 20, (int)transform.position.z + 20, new Color(0.0f, 0.0f, 0.0f));
+        //influenceMap.Apply();
         
         //Collider[] nearbyObjects = getNearbyObjects();
         /*
@@ -92,15 +96,15 @@ public class InfluenceMap : MonoBehaviour
         }
 
         lowPassFilter();
-
-        findPoint();
+        
+        
     }
 
 
     public void AddPoint(Vector2 coord, float weight)
     {
         influenceMap.SetPixel((int)coord.x + 20, (int)coord.y + 20, new Color(weight, weight, weight));
-        Debug.Log(coord);
+        //Debug.Log(coord);
         influenceMap.Apply();
     }
 
@@ -127,10 +131,13 @@ public class InfluenceMap : MonoBehaviour
         }
     }
    
-    private void findPoint()
+    public void FindPoint()
     {
         float highestValue = 0.0f;
-        
+        float closest = Mathf.Infinity;
+
+        Debug.Log("FindingPoint");
+
         for (int y = 0; y < influenceMap.height; y++)
         {
             for (int x = 0; x < influenceMap.width; x++)
@@ -139,9 +146,34 @@ public class InfluenceMap : MonoBehaviour
 
                 if (pixel.r > highestValue)
                 {
-                    highestValue = pixel.r;
-                    goToPos = new Vector3(x - 20f, 0.0f, y - 20f);
+                    float dist = Vector3.Distance(transform.position, new Vector3(x - 20, 0, y - 20));
+                    Vector3 dir = new Vector3(x - 20, transform.position.y, y - 20) - transform.position;
+                    if (!Physics.Raycast(transform.position, dir, dist+1, layerMask))
+                    {
+                        highestValue = pixel.r;
+                        goToPos = new Vector3(x - 20f, 0.0f, y - 20f);
+                    }
                 }
+                /*
+                else
+                {
+                    Debug.Log("Pixel color: " + pixel);
+                    if (pixel.r > 0.4)
+                    {
+                        float dist = Vector3.Distance(transform.position, new Vector3(x - 20, 0, y - 20));
+                        if (dist < closest)
+                        {
+                            
+                            if (!Physics.Raycast(transform.position, new Vector3(x - 20, transform.position.y, y - 20) - transform.position, dist, layerMask))
+                            {
+                                closest = dist;
+                                goToPos = new Vector3(x - 20f, 0.0f, y - 20f);
+                            }
+                        }
+                    }
+                }
+                */
+             
             }
         }
     }

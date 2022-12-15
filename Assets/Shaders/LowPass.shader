@@ -45,12 +45,13 @@ Shader "Hidden/LowPassX"
 	
 			fixed4 frag(v2f i) : SV_TARGET
 			{
+				fixed4 right2 = tex2D(_MainTex, i.uv + fixed2(_MainTex_TexelSize.x*2, 0));
+				fixed4 right = tex2D(_MainTex, i.uv + fixed2(_MainTex_TexelSize.x, 0)) * 5;
+				fixed4 center = tex2D(_MainTex, i.uv) * 6;
+				fixed4 left = tex2D(_MainTex, i.uv - fixed2(_MainTex_TexelSize.x, 0)) * 5;
+				fixed4 left2 = tex2D(_MainTex, i.uv - fixed2(_MainTex_TexelSize.x*2, 0));
 
-				fixed4 right = tex2D(_MainTex, i.uv + fixed2(_MainTex_TexelSize.x, 0));
-				fixed4 center = tex2D(_MainTex, i.uv) * 10;
-				fixed4 left = tex2D(_MainTex, i.uv - fixed2(_MainTex_TexelSize.x, 0));
-
-				fixed4 sum = round(((left + center + right)/12)*100)/100;
+				fixed4 sum = round(((left2 + left + center + right + right2)/18)*100)/100;
 
 				return sum;
 			}
@@ -65,11 +66,13 @@ Shader "Hidden/LowPassX"
 
 			fixed4 frag(v2f i) : SV_TARGET
 			{
-				fixed4 right = tex2D(_MainTex, i.uv + fixed2(0, _MainTex_TexelSize.y));
-				fixed4 center = tex2D(_MainTex, i.uv) * 10;
-				fixed4 left = tex2D(_MainTex, i.uv - fixed2(0, _MainTex_TexelSize.y));
+				fixed4 up2 = tex2D(_MainTex, i.uv + fixed2(0, _MainTex_TexelSize.y*2));
+				fixed4 up = tex2D(_MainTex, i.uv + fixed2(0, _MainTex_TexelSize.y)) * 5;
+				fixed4 center = tex2D(_MainTex, i.uv) * 6;
+				fixed4 down = tex2D(_MainTex, i.uv - fixed2(0, _MainTex_TexelSize.y)) * 5;
+				fixed4 down2 = tex2D(_MainTex, i.uv - fixed2(0, _MainTex_TexelSize.y*2));
 
-				fixed4 sum = round(((left + center + right)/12)*100)/100;
+				fixed4 sum = round(((up2 + up + center + down + down2)/18)*100)/100;
 
 				return sum;
 			}
