@@ -15,39 +15,24 @@ public class InfluenceMap : MonoBehaviour
     public Vector3 goToPos;
 
     [SerializeField]
-    Grid grid;
-    [SerializeField]
     Image influenceMapImage;
     [SerializeField]
-    MeshFilter planeMesh;
-    [SerializeField]
-    Shader lowpassShader;
-    [SerializeField]
     LayerMask layerMask;
-
     [SerializeField]
     Material lowPass;
     [SerializeField]
-    private int filterIterations;
+    private int filterIterations;   // number of iterations for our low-pass filtering
 
     public Texture2D influenceMap;
-    Texture m_texture;
-
     private float timer;
     
-    private float[,] map2;
-    private Dictionary<Vector3, float> map = new Dictionary<Vector3, float>();
-
-
     // Start is called before the first frame update
     void Start()
     {
         timer = 0;        
-        initDictionary();
 
         lowPass.hideFlags = HideFlags.HideAndDontSave;
         
-
         // Fill array with default values
         influenceMap = new Texture2D(40, 40);
         lowPass.SetTexture("_MainTex", influenceMap);
@@ -60,12 +45,11 @@ public class InfluenceMap : MonoBehaviour
             }
         }
 
-        influenceMap.Apply();
+        influenceMap.Apply();   // Apply changes to IM
         influenceMap.filterMode = FilterMode.Point;
-        influenceMap.wrapMode = TextureWrapMode.Clamp;
+        influenceMap.wrapMode = TextureWrapMode.Clamp;  // Clamp and not repeating for avoiding artifacts in corners
         influenceMapImage.DisableSpriteOptimizations();
         
-
         goToPos = transform.position;
         goToPos.y = 0;
     }
@@ -74,41 +58,25 @@ public class InfluenceMap : MonoBehaviour
     void Update()
     {
         timer += Time.deltaTime;
-
-        //influenceMap.SetPixel((int)transform.position.x + 20, (int)transform.position.z + 20, new Color(0.0f, 0.0f, 0.0f));
-        //influenceMap.Apply();
-        
-        //Collider[] nearbyObjects = getNearbyObjects();
-        /*
-        foreach (Collider obj in nearbyObjects)
-        {
-            Vector3 pos = obj.gameObject.transform.position;
-            Vector2 newPixel = new Vector2(pos.x, pos.z);
-
-            //AddPoint(newPixel, 1.0f);
-        }*/
-
        
         if (timer >= 0.5)
         {
             timer = 0;
-            decay();
+            Decay();
         }
 
-        lowPassFilter();
-        
-        
+        LowPassFilter();        
     }
 
-
+    // Method for adding point to IM
     public void AddPoint(Vector2 coord, float weight)
     {
         influenceMap.SetPixel((int)coord.x + 20, (int)coord.y + 20, new Color(weight, weight, weight));
-        //Debug.Log(coord);
         influenceMap.Apply();
     }
 
-    private void decay()
+    // Method for step every texel towards default value 0.5
+    private void Decay()
     {
         RenderTexture currentDestination = RenderTexture.GetTemporary(40, 40, 0);
         Graphics.Blit(influenceMap, currentDestination, lowPass, 2);
@@ -116,7 +84,8 @@ public class InfluenceMap : MonoBehaviour
         influenceMap.Apply();
     }
 
-    private void lowPassFilter()
+    // Method for applying lowpass filtering
+    private void LowPassFilter()
     {
         RenderTexture currentDestination = RenderTexture.GetTemporary(40, 40, 0);
 
@@ -131,12 +100,10 @@ public class InfluenceMap : MonoBehaviour
         }
     }
    
+    // Find highest most suitable point in IM and set as destination-coordinate
     public void FindPoint()
     {
         float highestValue = 0.0f;
-        float closest = Mathf.Infinity;
-
-        Debug.Log("FindingPoint");
 
         for (int y = 0; y < influenceMap.height; y++)
         {
@@ -153,76 +120,8 @@ public class InfluenceMap : MonoBehaviour
                         highestValue = pixel.r;
                         goToPos = new Vector3(x - 20f, 0.0f, y - 20f);
                     }
-                }
-                /*
-                else
-                {
-                    Debug.Log("Pixel color: " + pixel);
-                    if (pixel.r > 0.4)
-                    {
-                        float dist = Vector3.Distance(transform.position, new Vector3(x - 20, 0, y - 20));
-                        if (dist < closest)
-                        {
-                            
-                            if (!Physics.Raycast(transform.position, new Vector3(x - 20, transform.position.y, y - 20) - transform.position, dist, layerMask))
-                            {
-                                closest = dist;
-                                goToPos = new Vector3(x - 20f, 0.0f, y - 20f);
-                            }
-                        }
-                    }
-                }
-                */
-             
+                }             
             }
         }
-    }
-
-
-    private Collider[] getNearbyObjects()
-    {
-        Vector3 position = transform.position;
-        Collider[] nearbyObjects = Physics.OverlapSphere(position, 5.0f, LayerMask.GetMask("GameObject"));
-
-        return nearbyObjects;
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        // Draw a yellow sphere at the transform's position
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawSphere(transform.position, 5);
-    }
-
-    void initDictionary()
-    {
-        for (int i = -10; i < 10; i++){
-            for (int j = -10; j < 10; j++){
-                map.Add(new Vector3((float)i, 0.0f, (float)j), 0.5f);
-            }
-        }
-    }
-
-    void printDict()
-    {
-        foreach(KeyValuePair<Vector3, float> entry in map)
-        {
-            print("entry "+ entry.Key);
-        }
-    }
-}
-
-public class Node
-{
-    Vector3 position;
-
-    public Node(Vector3 pos)
-    {
-        this.position = pos;
-    }
-
-    public Vector3 getPosition()
-    {
-        return this.position;
     }
 }

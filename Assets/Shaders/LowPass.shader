@@ -42,7 +42,8 @@ Shader "Hidden/LowPassX"
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-	
+			
+			// Low-pass filtering in x-axis
 			fixed4 frag(v2f i) : SV_TARGET
 			{
 				fixed4 right2 = tex2D(_MainTex, i.uv + fixed2(_MainTex_TexelSize.x*2, 0));
@@ -64,6 +65,7 @@ Shader "Hidden/LowPassX"
 			#pragma vertex vert
 			#pragma fragment frag
 
+			// Low-pass filtering in y-axis
 			fixed4 frag(v2f i) : SV_TARGET
 			{
 				fixed4 up2 = tex2D(_MainTex, i.uv + fixed2(0, _MainTex_TexelSize.y*2));
@@ -85,6 +87,7 @@ Shader "Hidden/LowPassX"
 			#pragma vertex vert
 			#pragma fragment frag
 
+			// Pass for stepping texel towards 0.5
 			fixed4 frag(v2f i) : SV_TARGET
 			{
 				fixed4 center = round(tex2D(_MainTex, i.uv)*100)/100;

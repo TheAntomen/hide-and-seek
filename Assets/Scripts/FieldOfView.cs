@@ -29,6 +29,8 @@ public class FieldOfView : MonoBehaviour
         angle = startingAngle;
         angleIncrease = viewAngle / rayCount;
     }
+
+    // Method for finding visible targets and filling respective List, visibleTargets or visibleObstacles
     public void FindVisibleTargets()
     {
         visibleTargets.Clear();
@@ -36,12 +38,16 @@ public class FieldOfView : MonoBehaviour
 
         angle = GetAngleFromVector(transform.forward) - viewAngle / 2f;
 
+        // Send raycasts from different angles with increment "angleIncrease" for every cast
         for (int i = 0; i <= rayCount; i++)
         {
             RaycastHit hit;
             Physics.Raycast(transform.position, GetVectorFromAngle(angle +(i*angleIncrease)), out hit, viewRadius, targetMask);
+
+            // Draw debugging ray for visualizing rays
             Debug.DrawRay(transform.position, GetVectorFromAngle(angle + (i * angleIncrease)) * Vector3.Distance(transform.position, hit.point), Color.yellow);
 
+            // Check if and what the ray hit and add to lists
             if (hit.collider == null)
             {
                 // Nothing hit
@@ -56,6 +62,8 @@ public class FieldOfView : MonoBehaviour
             }
         }
     }
+
+    //------ Mathematical help-functions ------ //
 
     public static float GetAngleFromVector(Vector3 dir)
     {
