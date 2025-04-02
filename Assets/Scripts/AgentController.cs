@@ -49,6 +49,13 @@ public class AgentController : MonoBehaviour
 
         fieldOfView.FindVisibleTargets();
 
+
+        // Loop all visible osbtaclepoints and add to IM
+        foreach (Vector3 obstacle in fieldOfView.visibleObstacles)
+        {
+            InfluenceMap.AddPoint(new Vector2(obstacle.x, obstacle.z), 0.2f);
+        }
+
         // Loop all visible targets (player) and add to IM, set as destination and rotate agent
         foreach (Transform target in fieldOfView.visibleTargets)
         {
@@ -59,10 +66,5 @@ public class AgentController : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(dir);
         }
 
-        // Loop all visible osbtaclepoints and add to IM
-        foreach (Vector3 obstacle in fieldOfView.visibleObstacles)
-        {
-            InfluenceMap.AddPoint(new Vector2(obstacle.x, obstacle.z), 0.2f);
-        }
     }
 }

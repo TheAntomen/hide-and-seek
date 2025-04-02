@@ -3,12 +3,14 @@ Shader "Hidden/LowPassX"
 	Properties
 	{
 		_MainTex("Texture", 2D) = "white" {}
+		_DecayFactor("Decay Factor", range(0, 1)) = 0.9
 	}
 
 	CGINCLUDE
 		#include "UnityCG.cginc"
 
 		sampler2D _MainTex;
+		float4 _DecayFactor;
 		float4 _MainTex_TexelSize;
 
 		struct appdata
@@ -46,37 +48,42 @@ Shader "Hidden/LowPassX"
 			// Low-pass filtering in x-axis
 			fixed4 frag(v2f i) : SV_TARGET
 			{
-				fixed4 right2 = tex2D(_MainTex, i.uv + fixed2(_MainTex_TexelSize.x*2, 0));
-				fixed4 right = tex2D(_MainTex, i.uv + fixed2(_MainTex_TexelSize.x, 0)) * 5;
-				fixed4 center = tex2D(_MainTex, i.uv) * 6;
-				fixed4 left = tex2D(_MainTex, i.uv - fixed2(_MainTex_TexelSize.x, 0)) * 5;
-				fixed4 left2 = tex2D(_MainTex, i.uv - fixed2(_MainTex_TexelSize.x*2, 0));
+                // Gaussian weights
+                const float w1 = 1.0;
+                const float w2 = 4.0;
+                const float w3 = 7.0;
+                const float w4 = 4.0;
+                const float w5 = 1.0;
+                const float normFactor = 1.0 / 17.0; // Sum of weights = 17
 
-				fixed4 sum = round(((left2 + left + center + right + right2)/18)*100)/100;
+                // Sampling offsets
+                float2 texelX = float2(_MainTex_TexelSize.x, 0);
+                float2 texelY = float2(0, _MainTex_TexelSize.y);
 
-				return sum;
-			}
-			ENDCG
-		}
+                // 5-point Gaussian blur horizontally
+                fixed4 left2  = tex2D(_MainTex, i.uv - 2 * texelX) * w1;
+                fixed4 left   = tex2D(_MainTex, i.uv - texelX) * w2;
+                fixed4 center = tex2D(_MainTex, i.uv) * w3;
+                fixed4 right  = tex2D(_MainTex, i.uv + texelX) * w2;
+                fixed4 right2 = tex2D(_MainTex, i.uv + 2 * texelX) * w1;
 
-		Pass
-		{
-			CGPROGRAM
-			#pragma vertex vert
-			#pragma fragment frag
+                fixed4 horizontalBlur = (left2 + left + center + right + right2) * normFactor;
 
-			// Low-pass filtering in y-axis
-			fixed4 frag(v2f i) : SV_TARGET
-			{
-				fixed4 up2 = tex2D(_MainTex, i.uv + fixed2(0, _MainTex_TexelSize.y*2));
-				fixed4 up = tex2D(_MainTex, i.uv + fixed2(0, _MainTex_TexelSize.y)) * 5;
-				fixed4 center = tex2D(_MainTex, i.uv) * 6;
-				fixed4 down = tex2D(_MainTex, i.uv - fixed2(0, _MainTex_TexelSize.y)) * 5;
-				fixed4 down2 = tex2D(_MainTex, i.uv - fixed2(0, _MainTex_TexelSize.y*2));
+                // 5-point Gaussian blur vertically
+                fixed4 up2   = tex2D(_MainTex, i.uv + 2 * texelY) * w1;
+                fixed4 up    = tex2D(_MainTex, i.uv + texelY) * w2;
+                fixed4 down  = tex2D(_MainTex, i.uv - texelY) * w2;
+                fixed4 down2 = tex2D(_MainTex, i.uv - 2 * texelY) * w1;
 
-				fixed4 sum = round(((up2 + up + center + down + down2)/18)*100)/100;
+                fixed4 verticalBlur = (up2 + up + center + down + down2) * normFactor;
 
-				return sum;
+                // Combined blur
+                fixed4 blurredValue = (horizontalBlur + verticalBlur) * 0.5;
+
+                //fixed4 baseGray = fixed4(0.5, 0.5, 0.5, 1.0); // Neutral gray background
+				//fixed4 memoryValue = lerp(blurredValue, baseGray, _DecayFactor);
+
+                return blurredValue;
 			}
 			ENDCG
 		}
@@ -89,7 +96,7 @@ Shader "Hidden/LowPassX"
 
 			// Pass for stepping texel towards 0.5
 			fixed4 frag(v2f i) : SV_TARGET
-			{
+			{ 
 				fixed4 center = round(tex2D(_MainTex, i.uv)*100)/100;
 
 				if (center.r > 0.5f)

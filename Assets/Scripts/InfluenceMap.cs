@@ -24,12 +24,14 @@ public class InfluenceMap : MonoBehaviour
     private int filterIterations;   // number of iterations for our low-pass filtering
 
     public Texture2D influenceMap;
-    private float timer;
+    private float decayTimer;
+    private float filterTimer;
     
     // Start is called before the first frame update
     void Start()
     {
-        timer = 0;        
+        decayTimer = 0;
+        filterTimer = 0;
 
         lowPass.hideFlags = HideFlags.HideAndDontSave;
         
@@ -57,21 +59,26 @@ public class InfluenceMap : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        timer += Time.deltaTime;
+        filterTimer += Time.deltaTime;
        
-        if (timer >= 0.5)
+        if (decayTimer >= 2.0)
         {
-            timer = 0;
             Decay();
+            decayTimer = 0;
         }
 
-        LowPassFilter();        
+        if (filterTimer >= 1.0)
+        {
+            LowPassFilter();
+            filterTimer = 0;
+        }
+
     }
 
     // Method for adding point to IM
     public void AddPoint(Vector2 coord, float weight)
     {
-        influenceMap.SetPixel((int)coord.x + 20, (int)coord.y + 20, new Color(weight, weight, weight));
+        influenceMap.SetPixel((int)(coord.x + influenceMap.width / 2.0), (int)(coord.y + influenceMap.height / 2.0), new Color(weight, weight, weight));
         influenceMap.Apply();
     }
 
@@ -79,7 +86,7 @@ public class InfluenceMap : MonoBehaviour
     private void Decay()
     {
         RenderTexture currentDestination = RenderTexture.GetTemporary(40, 40, 0);
-        Graphics.Blit(influenceMap, currentDestination, lowPass, 2);
+        Graphics.Blit(influenceMap, currentDestination, lowPass, 1);
         influenceMap.ReadPixels(new Rect(0, 0, currentDestination.width, currentDestination.height), 0, 0);
         influenceMap.Apply();
     }
@@ -87,14 +94,11 @@ public class InfluenceMap : MonoBehaviour
     // Method for applying lowpass filtering
     private void LowPassFilter()
     {
-        RenderTexture currentDestination = RenderTexture.GetTemporary(40, 40, 0);
+        RenderTexture currentDestination = RenderTexture.GetTemporary(influenceMap.width, influenceMap.height, 0);
 
         for (int i = 0; i < filterIterations; i++)
         {
             Graphics.Blit(influenceMap, currentDestination, lowPass, 0);
-            influenceMap.ReadPixels(new Rect(0, 0, currentDestination.width, currentDestination.height), 0, 0);
-            influenceMap.Apply();
-            Graphics.Blit(influenceMap, currentDestination, lowPass, 1);
             influenceMap.ReadPixels(new Rect(0, 0, currentDestination.width, currentDestination.height), 0, 0);
             influenceMap.Apply();
         }
